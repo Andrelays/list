@@ -2,8 +2,6 @@
 #define LIST_H_INCLUDED
 
 extern FILE *Global_logs_pointer;
-extern FILE *Global_dot_pointer;
-
 extern bool  Global_color_output;
 
 #define LIST_CONSTRUCTOR(list_pointer)                                                          \
@@ -22,18 +20,17 @@ do {                                                                            
 typedef int TYPE_ELEMENT_LIST;
 
 const ssize_t  CAPACITY_MULTIPLIER_LIST     = 2;
-const ssize_t  INITIAL_CAPACITY_VALUE_LIST  = 10;
+const ssize_t  INITIAL_CAPACITY_VALUE_LIST  = 2;
 const int      POISON_LIST                  = 192;
 
 enum errors_code_list {
-    LIST_NO_ERROR                   = 0,
-    POINTER_TO_LIST_IS_NULL         = 1,
-    POINTER_TO_LIST_DATA_IS_NULL    = 1 <<  1,
-    POINTER_TO_LIST_NEXT_IS_NULL    = 1 <<  2,
-    POINTER_TO_LIST_PREV_IS_NULL    = 1 <<  3,
-    POINTER_TO_LIST_INFO_IS_NULL    = 1 <<  4
-
-
+    LIST_NO_ERROR                           = 0,
+    POINTER_TO_LIST_IS_NULL                 = 1,
+    POINTER_TO_LIST_DATA_IS_NULL            = 1 <<  1,
+    POINTER_TO_LIST_NEXT_IS_NULL            = 1 <<  2,
+    POINTER_TO_LIST_PREV_IS_NULL            = 1 <<  3,
+    POINTER_TO_LIST_INFO_IS_NULL            = 1 <<  4,
+    ATTEMPT_TO_DELETE_UNAVAILABLE_ELEM      = 1 <<  5
 };
 
 struct debug_info_list {
@@ -52,12 +49,17 @@ struct list {
     ssize_t                  free;
     ssize_t                  capacity;
     ssize_t                  error_code;
+    ssize_t                  number_graph; //TODO: Move to graph graph
     struct debug_info_list  *info;
 };
 
-list *get_pointer_list();
+list *new_pointer_list();
 
 ssize_t list_constructor(list *list_pointer, debug_info_list *info);
 ssize_t list_destructor (list *list_pointer);
+ssize_t push_front(list *list_pointer, TYPE_ELEMENT_LIST value);
+ssize_t push_back(list *list_pointer, TYPE_ELEMENT_LIST value);
+ssize_t insert_after(list *list_pointer, ssize_t anchor_elem_index, TYPE_ELEMENT_LIST value);
+TYPE_ELEMENT_LIST erase(list *list_pointer, ssize_t position);
 
 #endif //LIST_H_INCLUDED
