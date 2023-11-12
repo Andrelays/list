@@ -19,7 +19,7 @@ int main(int argc, const char *argv[])
 
     LIST_CONSTRUCTOR(list_pointer);
 
-    push_back(list_pointer, 10);
+    printf("%ld\n", push_back(list_pointer, 10));
     push_back(list_pointer, 20);
     erase(list_pointer, 2);
     push_back(list_pointer, 30);

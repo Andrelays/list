@@ -19,23 +19,12 @@ bool  Global_color_output  = true;
 
 #endif
 
-#ifdef DEBUG_OUTPUT_LIST_OK
-
-    #define IF_ON_LIST_OK(...)     __VA_ARGS__
-
-#else
-
-    #define IF_ON_LIST_OK(...)
-
-#endif
-
 static void    pour_poison_into_list    (list *list_pointer);
 static ssize_t verify_list              (list *list_pointer, ssize_t line, const char *file, const char *func);
-static ssize_t insert_first_element     (list *list_pointer, TYPE_ELEMENT_LIST value);
 static ssize_t check_capacity           (list *list_pointer);
 static ssize_t prepare_new_free_elements(list *list_pointer, ssize_t index_last_element_list);
 static bool    check_is_not_loop        (list *list_pointer, ssize_t index_first_element);
-static bool check_prev_from_next(list *list_pointer);
+static bool    check_prev_from_next     (list *list_pointer);
 
 
 IF_ON_LIST_DUMP
@@ -44,11 +33,9 @@ IF_ON_LIST_DUMP
     static void print_errors            (const list *list_pointer);
     static void print_debug_info        (const list *list_pointer, ssize_t line, const char *file, const char *func);
     static void generate_graph_of_list  (list *list_pointer, ssize_t line, const char *file, const char *func);
-    static void write_log_to_dot(const list *list_pointer, FILE *dot_file, ssize_t line, const char *file, const char *func);
+    static void write_log_to_dot        (const list *list_pointer, FILE *dot_file, ssize_t line, const char *file, const char *func);
     static void generate_image          (const list *list_pointer, const char *name_dot_file, ssize_t number_graph);
 )
-
-IF_ON_LIST_OK (static void list_ok  (const list *list_pointer));
 
 #define VERIFY_LIST(list_pointer) verify_list(list_pointer, __LINE__, __FILE__, __PRETTY_FUNCTION__)
 
@@ -123,7 +110,7 @@ ssize_t list_destructor(list *list_pointer)
     return LIST_NO_ERROR;
 }
 
-void pour_poison_into_list(list *list_pointer)
+static void pour_poison_into_list(list *list_pointer)
 {
     for (ssize_t index_list = 0; index_list < list_pointer->capacity; index_list++)
     {
@@ -151,7 +138,9 @@ ssize_t insert_after(list *list_pointer, ssize_t anchor_elem_index, TYPE_ELEMENT
 
     CHECK_ERRORS(list_pointer);
 
-    if (anchor_elem_index >= list_pointer->capacity || list_pointer->prev[anchor_elem_index] == -1) {
+    if (anchor_elem_index >= list_pointer->capacity || list_pointer->prev[anchor_elem_index] == -1)
+    {
+        printf(RED "ERROR! Attempt to insert by unavilable index\n" RESET_COLOR);
         return 0;
     }
 
@@ -203,28 +192,6 @@ ssize_t push_back(list *list_pointer, TYPE_ELEMENT_LIST value)
     return element_index;
 }
 
-ssize_t insert_first_element(list *list_pointer, TYPE_ELEMENT_LIST value)
-{
-    MYASSERT(list_pointer          != NULL, NULL_POINTER_PASSED_TO_FUNC, return POINTER_TO_LIST_IS_NULL);
-    MYASSERT(list_pointer->data    != NULL, NULL_POINTER_PASSED_TO_FUNC, return POINTER_TO_LIST_DATA_IS_NULL);
-    MYASSERT(list_pointer->next    != NULL, NULL_POINTER_PASSED_TO_FUNC, return POINTER_TO_LIST_NEXT_IS_NULL);
-    MYASSERT(list_pointer->prev    != NULL, NULL_POINTER_PASSED_TO_FUNC, return POINTER_TO_LIST_PREV_IS_NULL);
-    MYASSERT(list_pointer->info    != NULL, NULL_POINTER_PASSED_TO_FUNC, return POINTER_TO_LIST_INFO_IS_NULL);
-
-    CHECK_ERRORS(list_pointer);
-
-    list_pointer->next[0] = list_pointer->free;
-    list_pointer->prev[0] = list_pointer->next[0];
-
-    list_pointer->free = list_pointer->next[list_pointer->free];
-
-    list_pointer->data[list_pointer->next[0]] = value;
-    list_pointer->next[list_pointer->next[0]] = 0;
-    list_pointer->prev[list_pointer->next[0]] = 0;
-
-    return (VERIFY_LIST(list_pointer));
-}
-
 TYPE_ELEMENT_LIST erase(list *list_pointer, ssize_t position)
 {
     MYASSERT(list_pointer          != NULL, NULL_POINTER_PASSED_TO_FUNC, return POISON_LIST);
@@ -232,9 +199,14 @@ TYPE_ELEMENT_LIST erase(list *list_pointer, ssize_t position)
     MYASSERT(list_pointer->next    != NULL, NULL_POINTER_PASSED_TO_FUNC, return POISON_LIST);
     MYASSERT(list_pointer->prev    != NULL, NULL_POINTER_PASSED_TO_FUNC, return POISON_LIST);
     MYASSERT(list_pointer->info    != NULL, NULL_POINTER_PASSED_TO_FUNC, return POISON_LIST);
-    MYASSERT(position > 0,                  NEGATIVE_VALUE_SIZE_T,       return POISON_LIST);
 
     CHECK_ERRORS(list_pointer);
+
+    if (position >= list_pointer->capacity || position <= 0)
+    {
+        printf(RED "ERROR! Attempt to erase unavilable position\n" RESET_COLOR);
+        return POISON_LIST;
+    }
 
     TYPE_ELEMENT_LIST return_value = list_pointer->data[position];
     list_pointer->next[list_pointer->prev[position]] = list_pointer->next[position];
@@ -268,11 +240,11 @@ TYPE_ELEMENT_LIST pop_back(list *list_pointer)
 
 TYPE_ELEMENT_LIST pop_front(list *list_pointer)
 {
-    MYASSERT(list_pointer          != NULL, NULL_POINTER_PASSED_TO_FUNC, return 0);
-    MYASSERT(list_pointer->data    != NULL, NULL_POINTER_PASSED_TO_FUNC, return 0);
-    MYASSERT(list_pointer->next    != NULL, NULL_POINTER_PASSED_TO_FUNC, return 0);
-    MYASSERT(list_pointer->prev    != NULL, NULL_POINTER_PASSED_TO_FUNC, return 0);
-    MYASSERT(list_pointer->info    != NULL, NULL_POINTER_PASSED_TO_FUNC, return 0);
+    MYASSERT(list_pointer          != NULL, NULL_POINTER_PASSED_TO_FUNC, return POISON_LIST);
+    MYASSERT(list_pointer->data    != NULL, NULL_POINTER_PASSED_TO_FUNC, return POISON_LIST);
+    MYASSERT(list_pointer->next    != NULL, NULL_POINTER_PASSED_TO_FUNC, return POISON_LIST);
+    MYASSERT(list_pointer->prev    != NULL, NULL_POINTER_PASSED_TO_FUNC, return POISON_LIST);
+    MYASSERT(list_pointer->info    != NULL, NULL_POINTER_PASSED_TO_FUNC, return POISON_LIST);
 
     CHECK_ERRORS(list_pointer);
 
@@ -283,11 +255,11 @@ TYPE_ELEMENT_LIST pop_front(list *list_pointer)
 
 ssize_t clear(list *list_pointer)
 {
-    MYASSERT(list_pointer          != NULL, NULL_POINTER_PASSED_TO_FUNC, return 0);
-    MYASSERT(list_pointer->data    != NULL, NULL_POINTER_PASSED_TO_FUNC, return 0);
-    MYASSERT(list_pointer->next    != NULL, NULL_POINTER_PASSED_TO_FUNC, return 0);
-    MYASSERT(list_pointer->prev    != NULL, NULL_POINTER_PASSED_TO_FUNC, return 0);
-    MYASSERT(list_pointer->info    != NULL, NULL_POINTER_PASSED_TO_FUNC, return 0);
+    MYASSERT(list_pointer          != NULL, NULL_POINTER_PASSED_TO_FUNC, return POINTER_TO_LIST_IS_NULL);
+    MYASSERT(list_pointer->data    != NULL, NULL_POINTER_PASSED_TO_FUNC, return POINTER_TO_LIST_DATA_IS_NULL);
+    MYASSERT(list_pointer->next    != NULL, NULL_POINTER_PASSED_TO_FUNC, return POINTER_TO_LIST_NEXT_IS_NULL);
+    MYASSERT(list_pointer->prev    != NULL, NULL_POINTER_PASSED_TO_FUNC, return POINTER_TO_LIST_PREV_IS_NULL);
+    MYASSERT(list_pointer->info    != NULL, NULL_POINTER_PASSED_TO_FUNC, return POINTER_TO_LIST_INFO_IS_NULL);
 
     CHECK_ERRORS(list_pointer);
 
@@ -320,7 +292,7 @@ ssize_t find_elem_by_number(list *list_pointer, ssize_t number_target_element_li
     return index_element_list;
 }
 
-ssize_t check_capacity(list *list_pointer)
+static ssize_t check_capacity(list *list_pointer)
 {
     MYASSERT(list_pointer          != NULL, NULL_POINTER_PASSED_TO_FUNC, return POINTER_TO_LIST_IS_NULL);
     MYASSERT(list_pointer->data    != NULL, NULL_POINTER_PASSED_TO_FUNC, return POINTER_TO_LIST_DATA_IS_NULL);
@@ -353,7 +325,7 @@ ssize_t check_capacity(list *list_pointer)
     return (VERIFY_LIST(list_pointer));
 }
 
-ssize_t prepare_new_free_elements(list *list_pointer, ssize_t index_last_element_list)
+static ssize_t prepare_new_free_elements(list *list_pointer, ssize_t index_last_element_list)
 {
     MYASSERT(list_pointer          != NULL, NULL_POINTER_PASSED_TO_FUNC, return POINTER_TO_LIST_IS_NULL);
     MYASSERT(list_pointer->data    != NULL, NULL_POINTER_PASSED_TO_FUNC, return POINTER_TO_LIST_DATA_IS_NULL);
@@ -375,7 +347,7 @@ ssize_t prepare_new_free_elements(list *list_pointer, ssize_t index_last_element
     return LIST_NO_ERROR;
 }
 
-ssize_t verify_list(list *list_pointer, ssize_t line, const char *file, const char *func)
+static ssize_t verify_list(list *list_pointer, ssize_t line, const char *file, const char *func)
 {
     MYASSERT(list_pointer          != NULL, NULL_POINTER_PASSED_TO_FUNC, return POINTER_TO_LIST_IS_NULL);
     MYASSERT(list_pointer->data    != NULL, NULL_POINTER_PASSED_TO_FUNC, return POINTER_TO_LIST_DATA_IS_NULL);
@@ -412,18 +384,10 @@ ssize_t verify_list(list *list_pointer, ssize_t line, const char *file, const ch
             list_dump(list_pointer, line, file, func);
     )
 
-    list_dump(list_pointer, line, file, func);
-
-    IF_ON_LIST_OK
-    (
-        if (error_code == LIST_NO_ERROR)
-            list_ok(list_pointer);
-    )
-
     return list_pointer->error_code;
 }
 
-bool check_is_not_loop(list *list_pointer, ssize_t index_first_element)
+static bool check_is_not_loop(list *list_pointer, ssize_t index_first_element)
 {
     MYASSERT(list_pointer          != NULL, NULL_POINTER_PASSED_TO_FUNC, return false);
     MYASSERT(list_pointer->data    != NULL, NULL_POINTER_PASSED_TO_FUNC, return false);
@@ -436,24 +400,19 @@ bool check_is_not_loop(list *list_pointer, ssize_t index_first_element)
 
     while (slow_index_counter != 0 && fast_index_counter != 0)
     {
-        // printf("slow_index_counter = %ld fast_index_counter = %ld\n", slow_index_counter, fast_index_counter);
-
         slow_index_counter = list_pointer->next[slow_index_counter];
         fast_index_counter = list_pointer->next[fast_index_counter];
         fast_index_counter = list_pointer->next[fast_index_counter];
 
-        // printf("slow_index_counter = %ld fast_index_counter = %ld\n", slow_index_counter, fast_index_counter);
-
         if (fast_index_counter == slow_index_counter && fast_index_counter != 0) {
             return false;
         }
-
     }
 
     return true;
 }
 
-bool check_prev_from_next(list *list_pointer)
+static bool check_prev_from_next(list *list_pointer)
 {
     MYASSERT(list_pointer          != NULL, NULL_POINTER_PASSED_TO_FUNC, return false);
     MYASSERT(list_pointer->data    != NULL, NULL_POINTER_PASSED_TO_FUNC, return false);
@@ -477,7 +436,7 @@ bool check_prev_from_next(list *list_pointer)
 
 IF_ON_LIST_DUMP
 (
-    void list_dump(list *list_pointer, ssize_t line, const char *file, const char *func)
+    static void list_dump(list *list_pointer, ssize_t line, const char *file, const char *func)
     {
         MYASSERT(list_pointer          != NULL, NULL_POINTER_PASSED_TO_FUNC, return);
         MYASSERT(list_pointer->data    != NULL, NULL_POINTER_PASSED_TO_FUNC, return);
@@ -496,7 +455,7 @@ IF_ON_LIST_DUMP
 
 IF_ON_LIST_DUMP
 (
-    void print_debug_info(const list *list_pointer, ssize_t line, const char *file, const char *func)
+    static void print_debug_info(const list *list_pointer, ssize_t line, const char *file, const char *func)
     {
         MYASSERT(list_pointer          != NULL, NULL_POINTER_PASSED_TO_FUNC, return);
         MYASSERT(list_pointer->data    != NULL, NULL_POINTER_PASSED_TO_FUNC, return);
@@ -525,7 +484,7 @@ IF_ON_LIST_DUMP
     }
 )
 
-void print_errors(const list *list_pointer)
+static void print_errors(const list *list_pointer)
 {
     MYASSERT(list_pointer           != NULL, NULL_POINTER_PASSED_TO_FUNC, return);
     MYASSERT(list_pointer->data     != NULL, NULL_POINTER_PASSED_TO_FUNC, return);
