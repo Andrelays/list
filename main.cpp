@@ -27,7 +27,9 @@ int main(int argc, const char *argv[])
     push_back(list_pointer, 50);
     printf("%ld\n", insert_after(list_pointer, 5, 75));
     push_front(list_pointer, 50);
-
+    pop_back(list_pointer);
+    printf("%ld\n", find_elem_by_number(list_pointer, 2));
+    clear(list_pointer);
 
     list_destructor(list_pointer);
 

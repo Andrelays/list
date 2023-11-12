@@ -30,7 +30,17 @@ enum errors_code_list {
     POINTER_TO_LIST_NEXT_IS_NULL            = 1 <<  2,
     POINTER_TO_LIST_PREV_IS_NULL            = 1 <<  3,
     POINTER_TO_LIST_INFO_IS_NULL            = 1 <<  4,
-    ATTEMPT_TO_DELETE_UNAVAILABLE_ELEM      = 1 <<  5
+    ATTEMPT_TO_DELETE_UNAVAILABLE_ELEM      = 1 <<  5,
+    LOOP_IN_FREE_ELEMENTS                   = 1 <<  6,
+    LOOP_IN_OCCUPIED_ELEMENTS               = 1 <<  7,
+    CAPACITY_LESS_THAN_ZERO_LIST            = 1 <<  8,
+    FREE_LESS_THAN_ZERO                     = 1 <<  9,
+    HEAD_LESS_THAN_ZERO                     = 1 << 10,
+    TAIL_LESS_THAN_ZERO                     = 1 << 11,
+    FREE_POINT_TO_OCCUPIED_ELEMENT          = 1 << 12,
+    PREV_FROM_NEXT_NOT_EQUAL_ELEMENT_INDEX =  1 << 13,
+    HEAD_POINT_TO_FREE_ELEMENT              = 1 << 14,
+    TAIL_POINT_TO_FREE_ELEMENT              = 1 << 15,
 };
 
 struct debug_info_list {
@@ -44,22 +54,24 @@ struct list {
     TYPE_ELEMENT_LIST       *data;
     long int                *next;
     long int                *prev;
-    ssize_t                  head;
-    ssize_t                  tail;
     ssize_t                  free;
     ssize_t                  capacity;
     ssize_t                  error_code;
-    ssize_t                  number_graph; //TODO: Move to graph graph
     struct debug_info_list  *info;
 };
 
 list *new_pointer_list();
 
-ssize_t list_constructor(list *list_pointer, debug_info_list *info);
-ssize_t list_destructor (list *list_pointer);
-ssize_t push_front(list *list_pointer, TYPE_ELEMENT_LIST value);
-ssize_t push_back(list *list_pointer, TYPE_ELEMENT_LIST value);
-ssize_t insert_after(list *list_pointer, ssize_t anchor_elem_index, TYPE_ELEMENT_LIST value);
-TYPE_ELEMENT_LIST erase(list *list_pointer, ssize_t position);
+ssize_t           list_constructor      (list *list_pointer, debug_info_list *info);
+ssize_t           list_destructor       (list *list_pointer);
+ssize_t           push_front            (list *list_pointer, TYPE_ELEMENT_LIST value);
+ssize_t           push_back             (list *list_pointer, TYPE_ELEMENT_LIST value);
+ssize_t           insert_after          (list *list_pointer, ssize_t anchor_elem_index, TYPE_ELEMENT_LIST value);
+TYPE_ELEMENT_LIST erase                 (list *list_pointer, ssize_t position);
+TYPE_ELEMENT_LIST pop_front             (list *list_pointer);
+TYPE_ELEMENT_LIST pop_back              (list *list_pointer);
+ssize_t           clear                 (list *list_pointer);
+ssize_t           find_elem_by_number   (list *list_pointer, ssize_t number_target_element_list);
+
 
 #endif //LIST_H_INCLUDED
